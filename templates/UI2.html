@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Answering</title>
+    <style>
+        body {
+            background-color: #252422;
+            font-family: Arial, sans-serif;
+            color: #FFFCF2;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+            padding: 20px;
+        }
+        .textbox-container {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .textbox {
+            flex: 1;
+            font-size: 20px;
+            color: #FFFCF2;
+            background-color: #333;
+            border: none;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .button {
+            background-color: #639cdc;
+            color: #FFFCF2;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .button:hover {
+            background-color: #426cb4;
+        }
+        #question {
+            margin-right: 15px; /* Add some space between the textareas */
+        }
+        #answer {
+            flex: 1;
+            font-size: 20px;
+            color: #FFFCF2;
+            background-color: #333;
+            border: none;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .label {
+            color: #FFFCF2;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="textbox-container">
+            <textarea class="textbox" id="question" rows="10" placeholder="Enter your question here"></textarea>
+            <textarea class="textbox" id="answer" rows="10" placeholder="Answer will appear here" readonly></textarea>
+        </div>
+
+        <div class="button-container">
+            <button class="button" id="generateAnswerBtn">Generate Answer</button>
+        </div>
+    </div>
+    <script>
+        // Function to handle generate answer button click
+        document.getElementById("generateAnswerBtn").addEventListener("click", function() {
+            // Get the content of the question text area
+            var questionContent = document.getElementById("question").value;
+            // Get the path to the document file (if needed)
+            // var documentPath = document.getElementById("documentPath").value;
+
+            // Send AJAX request to Flask endpoint for answering the question with the question content
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/answer-question", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // Update the page with the generated answer
+                    var response = JSON.parse(xhr.responseText);
+                    document.getElementById("answer").value = response.answer;
+                }
+            };
+
+            // Send the question content and document path in the request body as JSON
+            xhr.send(JSON.stringify({ question: questionContent }));
+        });
+    </script>
+</body>
+</html>

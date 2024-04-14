@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcribe</title>
+    <style>
+        body {
+            background-color: #252422;
+            font-family: Arial, sans-serif;
+            color: #FFFCF2;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+            padding: 20px;
+        }
+        .textbox-container {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .textbox {
+            flex: 1;
+            font-size: 20px;
+            color: #FFFCF2;
+            background-color: #333;
+            border: none;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: calc(50% - 5px);
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .button {
+            background-color: #639cdc;
+            color: #FFFCF2;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .button:hover {
+            background-color: #426cb4;
+        }
+        .label {
+            color: #FFFCF2;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .slider {
+            -webkit-appearance: none;
+            width: 300px;
+            height: 20px;
+            background: #333;
+            outline: none;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #639cdc;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        #transcript {
+            margin-right: 15px; /* Add some space between the textareas */
+        }
+        .option-menu {
+            width: auto;
+            padding: 10px;
+            font-size: 16px;
+            color: #FFFCF2;
+            background-color: #333;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="textbox-container">
+            <textarea class="textbox" id="transcript" rows="10" placeholder="Transcript will appear here"></textarea>
+            <textarea class="textbox" id="summary" rows="10" placeholder="Summary will appear here"></textarea>
+        </div>
+        <div class="button-container">
+            <button class="button" id="summarizeBtn">Summarize</button>
+            <button class="button" id="startTranscriptionBtn">Start Transcription</button>
+            <button class="button" id="stopTranscriptionBtn">Stop Transcription</button>
+            <button class="button" id="qaPageBtn">Question and Answering Page</button>
+            <button class="button" id="quizGenerationBtn" onClick="location.href='/ui3'">Quiz Generation</button>
+
+        </div>
+        <label class="label" for="updateIntervalSlider">Update Interval:</label>
+        <input type="range" min="1" max="10" value="1" class="slider" id="updateIntervalSlider"><br>
+        <select class="option-menu" id="langCombobox">
+            <option value="English">English</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+        </select>
+    </div>
+    <script>
+        // Function to handle start transcription button click
+        document.getElementById("startTranscriptionBtn").addEventListener("click", function() {
+            fetch("/start-transcription")
+                .then(response => response.text())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+        });
+
+        // Function to handle stop transcription button click
+        document.getElementById("stopTranscriptionBtn").addEventListener("click", function() {
+            fetch("/stop-transcription")
+                .then(response => response.text())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+        });
+
+        // Function to handle summarize button click
+        document.getElementById("summarizeBtn").addEventListener("click", function() {
+            // Get the content of the transcript text area
+            var transcriptContent = document.getElementById("transcript").value;
+
+            // Send AJAX request to Flask endpoint for summarization with the transcript content
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/summarize-transcriptions", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // Update the page with the summarized text
+                    document.getElementById("summary").textContent = xhr.responseText;
+                }
+            };
+
+            // Send the transcript content in the request body
+            xhr.send(JSON.stringify({ transcript: transcriptContent }));
+        });
+
+        // Function to navigate to the question-answering page and save transcriptions to file
+        document.getElementById("qaPageBtn").addEventListener("click", function() {
+            saveTranscriptionsToFile();
+        });
+
+        function saveTranscriptionsToFile() {
+            // Get the content of the transcription text box
+            var transcriptionText = document.getElementById("transcript").value;
+
+            // Send an AJAX request to the backend (Flask) to save the transcriptions to the file
+            fetch("/save-transcriptions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ transcriptionText: transcriptionText }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to save transcriptions to file.");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Transcriptions saved to file successfully:", data.message);
+                // Redirect to the Question and Answering page after saving transcriptions
+                window.location.href = "/qa-page";
+            })
+            .catch(error => {
+                console.error("Error saving transcriptions to file:", error);
+            });
+        }
+
+        // Function to update the transcription dynamically
+        function updateTranscription() {
+            fetch("/get-transcription")
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("transcript").innerHTML = data;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Update transcription every second
+        setInterval(updateTranscription, 1000);
+    </script>
+</body>
+</html>
